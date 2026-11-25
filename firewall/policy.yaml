@@ -1,0 +1,28 @@
+# TOOL POLICY: what the AI agent is allowed to do.
+# This is the safety net: even if an attack text slips past the detectors,
+# a hijacked agent still cannot do dangerous things.
+#
+# "tainted" = untrusted content (a file, web page, email) has already entered the
+# conversation. Once tainted, the rules below get stricter.
+
+default: deny            # any tool not listed here is blocked
+
+tools:
+  read_file:
+    allow: true
+    filename_pattern: '[A-Za-z0-9_\-. ]+'       # no slashes -> no path tricks
+    sensitive_files: ["secrets.txt", ".env"]    # cannot be read once tainted
+  read_webpage:
+    allow: true
+    filename_pattern: '[A-Za-z0-9_\-. ]+'
+    sensitive_files: []
+  send_email:
+    allow: true
+    trusted_domains: ["company.com"]            # when tainted, only these domains
+    max_body_chars: 2000                        # (or an address the USER typed himself)
+
+# OUTPUT GUARD: what the AI is allowed to put in its answers.
+output:
+  allowed_domains: ["company.com"]   # images/links to these hosts are fine
+  block_secrets: true                # API keys, passwords, private keys in an answer
+  block_external_urls: true          # external images, and external links that carry data
