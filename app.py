@@ -213,15 +213,17 @@ with tab2:
     default_idx = preset_keys.index(default_preset)
 
     if "task_input" not in st.session_state:
-        st.session_state.task_input = PRESETS[default_preset][0]
-        st.session_state.doc_input = PRESETS[default_preset][1]
+        default_task, default_doc = PRESETS[default_preset]
+        st.session_state.task_input = default_task
+        st.session_state.doc_input = default_doc
 
     def on_preset_change():
         selected = st.session_state.preset_select
-        st.session_state.task_input = PRESETS[selected][0]
-        st.session_state.doc_input = PRESETS[selected][1]
+        new_task, new_doc = PRESETS[selected]
+        st.session_state.task_input = new_task
+        st.session_state.doc_input = new_doc
 
-    col_left, col_right = st.columns([1, 1], gap="large")
+    col_left, col_right = st.columns(2, gap="large")
 
     with col_left:
         st.selectbox(
