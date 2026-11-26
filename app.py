@@ -223,7 +223,7 @@ with tab2:
         st.session_state.task_input = new_task
         st.session_state.doc_input = new_doc
 
-    col_left, col_right = st.columns(2, gap="large")
+    col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
         st.selectbox(
@@ -237,9 +237,49 @@ with tab2:
         doc = st.text_area(
             "Document the assistant reads (doc.txt). Attackers control this text.",
             key="doc_input",
-            height=180,
+            height=160,
         )
         fw_on = st.checkbox("Firewall ON (untick to see the attack succeed)", value=False)
 
         with st.expander("Choose which firewall layers are active", expanded=False):
             rules = st.checkbox("Layer 1: cleaning and rules", value=True)
+            detector = st.checkbox("Layer 2: ML detector", value=True)
+            policy = st.checkbox("Layer 3: tool policy", value=True)
+            output = st.checkbox("Layer 4: output guard", value=True)
+
+        st.button("Run the assistant", type="primary")
+
+    with col_right:
+        st.subheader("Result")
+        try:
+            verdict_html, ans_text, emails_data, decisions_data = run_demo(
+                task, doc, fw_on, rules, detector, policy, output
+            )
+            st.markdown(verdict_html, unsafe_allow_html=True)
+            st.text_area("Assistant's answer", value=ans_text, height=120, disabled=True)
+
+            st.markdown("**Emails the assistant sent**")
+            st.dataframe(
+                pd.DataFrame(emails_data, columns=["Email sent to", "Body"]),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+            st.markdown("**What the firewall decided**")
+            st.dataframe(
+                pd.DataFrame(decisions_data, columns=["Check", "Source", "Decision", "Layer", "Score", "Reason"]),
+                use_container_width=True,
+                hide_index=True,
+            )
+        except Exception as e:
+            st.error(f"Error running demo: {e}")
+
+with st.expander("How it works, and what it cannot do", expanded=False):
+    st.markdown(
+        "**Layer 1** cleans hidden tricks (invisible characters, HTML comments, base64, spaced letters) and matches attack patterns. "
+        "**Layer 2** is a small trained detector. **Layer 3** limits what the assistant may do, for example it cannot email "
+        "unknown addresses after reading untrusted text. **Layer 4** checks the answer for secrets, hidden-prompt leaks and "
+        "data-stealing image links.\n\n"
+        "No firewall stops every attack. This demo uses a tiny detector and a simulated model, so it is an illustration, "
+        "not a security guarantee. Try to beat it: if you find an attack that gets through, that is a useful result."
+    )
